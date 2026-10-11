@@ -1,0 +1,1325 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rechentrainer</title>
+<style>
+:root{
+  --bg:#edf0f1; --paper:#fafbfb; --ink:#1c2a35; --muted:#566874; --line:#cfd8dc; --off:#8797a1;
+  --teal:#2b7a78; --tealD:#1d5a58; --tealL:#d5e9e6;
+  --amber:#b57a1c; --amberL:#f5e7c8;
+  --rose:#b24f3f; --roseL:#f2d9d3;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.5 Verdana,"Segoe UI",system-ui,sans-serif}
+[hidden]{display:none!important}
+button{font:inherit;color:inherit;touch-action:manipulation}
+:focus-visible{outline:3px solid var(--teal);outline-offset:2px}
+.wrap{max-width:1080px;margin:0 auto;padding:32px 24px 72px}
+h1{font-size:clamp(34px,5vw,52px);line-height:1.05;margin:0 0 10px;letter-spacing:-.02em}
+h2{font-size:20px;margin:0 0 14px}
+p{margin:0 0 10px}
+.lede{color:var(--muted);max-width:56ch;margin-bottom:28px}
+.hint{color:var(--muted);font-size:15px}
+
+/* ---------- Start ---------- */
+.start-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:56px}
+@media(max-width:900px){.start-grid{grid-template-columns:1fr;gap:0}}
+.block{padding:22px 0;border-top:1px solid var(--line)}
+.series-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;max-width:520px}
+@media(max-width:560px){.series-grid{grid-template-columns:repeat(4,1fr)}}
+.sbtn{aspect-ratio:1;min-height:56px;font-size:24px;font-weight:700;background:var(--paper);border:2px solid #dde3e6;color:var(--off);border-radius:14px;cursor:pointer;font-variant-numeric:tabular-nums}
+.sbtn[aria-pressed=true]{background:var(--teal);border-color:var(--teal);color:#fff}
+.quick{display:flex;gap:18px;margin-top:14px}
+.seg{display:flex;flex-wrap:wrap;gap:8px}
+.seg button{background:var(--paper);border:2px solid #dde3e6;color:var(--ink);border-radius:12px;padding:10px 16px;font-weight:700;cursor:pointer}
+.seg button[aria-pressed=true]{background:var(--teal);border-color:var(--teal);color:#fff}
+#mod-chooser{margin-bottom:22px}
+#mod-settings .hint{margin:6px 0 0}
+.two{margin-bottom:0}
+.link{background:none;border:0;padding:4px 0;color:var(--tealD);text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+.modes{display:grid;gap:12px}
+.mode{position:relative;display:block;cursor:pointer}
+.mode input{position:absolute;opacity:0;inset:0}
+.mode-body{display:block;padding:16px 18px;border:2px solid var(--line);border-radius:14px;background:var(--paper)}
+.mode-body strong{display:block;font-size:18px;margin-bottom:2px}
+.mode-body span{color:var(--muted);font-size:15px}
+.mode input:checked + .mode-body{border-color:var(--teal);background:var(--tealL)}
+.mode input:focus-visible + .mode-body{outline:3px solid var(--teal);outline-offset:2px}
+.field{margin-bottom:20px}
+.field label,.field .lbl{display:flex;justify-content:space-between;align-items:baseline;font-weight:700;margin-bottom:6px}
+.field output{font-weight:400;color:var(--tealD);font-variant-numeric:tabular-nums}
+input[type=range]{width:100%;accent-color:var(--teal);height:28px}
+input[type=text],input[type=number]{width:100%;font:inherit;padding:10px 12px;border:2px solid var(--line);border-radius:10px;background:var(--paper)}
+.check{display:flex;gap:10px;align-items:flex-start;margin-bottom:12px;cursor:pointer}
+.check input{width:22px;height:22px;margin:2px 0 0;accent-color:var(--teal);flex:none}
+details{border-top:1px solid var(--line);padding-top:16px}
+summary{cursor:pointer;font-weight:700;margin-bottom:14px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.start-actions{border-top:1px solid var(--line);padding-top:26px;display:flex;align-items:center;gap:20px}
+.primary{background:var(--teal);color:#fff;border:0;border-radius:14px;padding:16px 48px;font-size:22px;font-weight:700;cursor:pointer}
+.primary:hover{background:var(--tealD)}
+.primary:disabled{background:#a9b8bd;cursor:not-allowed}
+.secondary{background:var(--paper);border:2px solid var(--line);border-radius:12px;padding:12px 22px;cursor:pointer;font-weight:700}
+.secondary:hover{border-color:var(--teal)}
+
+/* ---------- Test ---------- */
+#s-test{min-height:100vh;display:flex;flex-direction:column}
+#tl{position:fixed;left:0;right:0;top:0;height:6px;background:var(--line);z-index:5}
+#tl i{display:block;height:100%;background:var(--teal);transform-origin:left;transform:scaleX(0)}
+#topbar{display:flex;justify-content:space-between;align-items:center;padding:22px 24px 0;max-width:1180px;width:100%;margin:0 auto}
+#clock{font-variant-numeric:tabular-nums;color:var(--muted);font-size:18px}
+.ghost{background:none;border:1px solid var(--line);border-radius:10px;padding:8px 14px;color:var(--muted);cursor:pointer}
+#stage{flex:1;display:grid;grid-template-columns:minmax(0,1fr);gap:32px;max-width:1180px;width:100%;margin:0 auto;padding:16px 24px 40px;align-content:center}
+body[data-mode=train] #stage{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr)}
+@media(max-width:960px){body[data-mode=train] #stage{grid-template-columns:minmax(0,1fr)}}
+#taskcol{display:flex;flex-direction:column;align-items:center;gap:28px;min-width:0}
+#taskcol.playing{visibility:hidden}               /* beim Spielen ist die Aufgabe ausgeblendet */
+#card{width:100%;max-width:760px;text-align:center;container-type:inline-size}
+#eq-row{display:flex;align-items:baseline;justify-content:center;gap:.3em;font-size:clamp(30px,9vw,64px);font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap;line-height:1.15}
+@supports (width:1cqw){#eq-row{font-size:clamp(28px,12cqw,108px)}}  /* skaliert mit der Spaltenbreite, nie breiter als die Karte */
+#slot{position:relative;display:inline-flex;align-items:baseline;min-width:3.1ch;border-bottom:.07em solid var(--teal);padding:0 .12em;min-height:1.1em}
+#caret{display:inline-block;width:.05em;height:.8em;background:var(--muted);opacity:.45;align-self:center;margin-left:.04em}
+#mark{position:absolute;left:100%;top:50%;transform:translateY(-50%);margin-left:.2em;font-size:.55em;color:var(--teal);opacity:0;transition:opacity .25s}
+#card[data-state=ok] #mark{opacity:1}
+#card:not([data-state=answer]) #caret{display:none}
+#card[data-state=ok] #ans{color:var(--tealD)}
+#card[data-state=wrong] #slot,#card[data-state=timeout] #slot{border-color:var(--amber)}
+#card[data-state=wrong] #ans,#card[data-state=timeout] #ans{color:var(--amber)}
+#card.rep #slot{border-bottom-style:dashed}
+#bar{height:14px;border-radius:7px;background:#dbe3e6;margin:30px auto 0;max-width:520px;overflow:hidden}
+#bar i{display:block;height:100%;background:var(--teal);transform-origin:left;border-radius:7px}
+#bar.low i{background:var(--amber)}
+#note{min-height:1.7em;margin:18px 0 0;color:var(--muted);font-size:18px}
+#keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:100%;max-width:300px}
+#keypad button{height:62px;font-size:26px;font-weight:700;background:var(--paper);border:2px solid var(--line);border-radius:14px;cursor:pointer;user-select:none;-webkit-user-select:none}
+#keypad button:active{background:var(--tealL)}
+#keypad .ok{background:var(--teal);border-color:var(--teal);color:#fff;font-size:20px}
+#keypad .bk{color:var(--muted)}
+#gamecol{display:flex;flex-direction:column;gap:10px;align-self:center;min-width:0;width:100%;max-width:560px;justify-self:center}
+#game{width:100%;height:auto;display:block;border-radius:16px;background:#e4ecec;cursor:crosshair;touch-action:manipulation}
+#game-foot{display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:44px}
+#game-score{font-weight:700;font-variant-numeric:tabular-nums}
+#game-hint{margin:0;color:var(--muted);font-size:15px;min-height:1.5em}
+
+/* ---------- Ergebnis ---------- */
+.res-head{margin-bottom:8px}
+.res-sub{color:var(--muted);margin-bottom:26px}
+.summary{display:flex;flex-wrap:wrap;gap:0;margin:0 0 8px;padding:0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.summary div{flex:1 1 150px;padding:18px 18px 16px 0;margin-right:18px;border-right:1px solid var(--line)}
+.summary div:last-child{border-right:0;margin-right:0}
+.summary dt{color:var(--muted);font-size:15px}
+.summary dd{margin:2px 0 0;font-size:34px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.2}
+.summary dd small{font-size:15px;font-weight:400;color:var(--muted)}
+.res-sec{padding:30px 0 6px}
+.practice{background:var(--amberL);border-radius:14px;padding:16px 20px;margin:26px 0 0}
+.tablewrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;font-size:16px}
+th,td{padding:9px 12px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+th{font-weight:700;vertical-align:bottom}
+th button{background:none;border:0;padding:0;font-weight:700;cursor:pointer;text-align:inherit}
+th button:hover{color:var(--tealD)}
+th[aria-sort=descending] button::after{content:" ↓"}
+th[aria-sort=ascending] button::after{content:" ↑"}
+td.sel::before{content:"● ";color:var(--teal);font-size:11px;vertical-align:middle}
+tr.top td{background:var(--amberL)}
+.mini{display:inline-block;height:8px;width:calc(var(--w) * 0.6px);background:var(--rose);border-radius:4px;margin-left:8px;vertical-align:middle;opacity:.75}
+.mini.sc{background:var(--amber)}
+.fine{font-size:14px;color:var(--muted);margin-top:10px;max-width:90ch}
+.heat{display:grid;grid-template-columns:repeat(13,minmax(0,1fr));gap:3px;max-width:640px}
+.heat span{aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:13px;border-radius:5px;font-variant-numeric:tabular-nums}
+.heat .hd{color:var(--muted);font-weight:700;font-size:13px}
+.heat .e0{background:transparent;border:1px dashed var(--line)}
+.heat .ok{background:var(--tealL)}
+.heat .x{background:#e3e8ea;opacity:.55}
+.legend{display:flex;flex-wrap:wrap;gap:16px;margin-top:12px;font-size:14px;color:var(--muted)}
+.legend i{display:inline-block;width:14px;height:14px;border-radius:4px;vertical-align:-2px;margin-right:6px}
+.tl-grid{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:14px 10px}
+@media(max-width:1000px){.tl-grid{grid-template-columns:repeat(5,minmax(0,1fr))}}
+@media(max-width:560px){.tl-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.tm{font-size:13px;color:var(--muted)}
+.tm.off{opacity:.38}
+.tm .lab{margin-bottom:4px;font-weight:700}
+.tm .cells{display:grid;grid-template-columns:repeat(6,1fr);gap:2px}
+.tc{height:28px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums}
+.tc.c0{background:var(--tealL)}
+.tc.c1{background:#f0d9a2}
+.tc.c2{background:#e0a487}
+.tc.c3{background:var(--rose);color:#fff}
+.tc.off{background:repeating-linear-gradient(135deg,#e1e6e8,#e1e6e8 4px,#eef1f2 4px,#eef1f2 8px)}
+.tm .ft{margin-top:4px;line-height:1.35}
+.res-actions{display:flex;flex-wrap:wrap;gap:12px;padding-top:34px}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body data-mode="calm">
+<main class="wrap" id="app">
+
+<!-- ================= START ================= -->
+<section id="s-start">
+  <h1>Rechentrainer</h1>
+  <p class="lede">Aufgaben wählen, Modus wählen, Start. Alles läuft in diesem Browserfenster, es wird nichts hochgeladen.</p>
+
+  <div class="start-grid">
+    <div>
+      <div class="block">
+        <h2>Aufgaben</h2>
+        <div id="mod-chooser" class="seg" role="group" aria-label="Rechenart wählen"></div>
+        <div id="mod-settings"></div>
+        <p class="hint" id="pool-info" style="margin-top:12px"></p>
+      </div>
+      <div class="block">
+        <h2>Modus</h2>
+        <div class="modes">
+          <label class="mode"><input type="radio" name="mode" value="calm" checked>
+            <span class="mode-body"><strong>Reizarm</strong><span>Ruhige Anzeige, ein sanfter Ton bei richtigen Antworten. Fehler werden kurz erklärt und später wiederholt.</span></span></label>
+          <label class="mode"><input type="radio" name="mode" value="train">
+            <span class="mode-body"><strong>Training mit Spiel</strong><span>Ein Balken läuft ab und wird mit jeder richtigen Antwort kürzer. Richtige Antworten bringen Pfeile für ein kleines Bogenspiel, schnelle Antworten zwei.</span></span></label>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="block">
+        <h2>Einstellungen</h2>
+        <div class="field">
+          <label for="in-name">Name oder Kürzel (optional)</label>
+          <input id="in-name" type="text" maxlength="40" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="in-min">Prüfzeit <output id="o-min" for="in-min"></output></label>
+          <input id="in-min" type="range" min="1" max="30" step="1" value="4">
+        </div>
+        <div id="f-bar" hidden>
+          <div class="field">
+            <label for="in-bar">Zeit pro Aufgabe am Anfang <output id="o-bar" for="in-bar"></output></label>
+            <input id="in-bar" type="range" min="2" max="20" step="0.5" value="6">
+          </div>
+          <div class="field">
+            <label for="in-minbar">Mindestzeit pro Aufgabe <output id="o-minbar" for="in-minbar"></output></label>
+            <input id="in-minbar" type="range" min="1" max="10" step="0.5" value="3">
+          </div>
+        </div>
+        <label class="check"><input type="checkbox" id="in-sound" checked><span>Ton an <button type="button" class="link" id="btn-testtone" style="margin-left:8px">Ton testen</button></span></label>
+        <label class="check"><input type="checkbox" id="in-keypad"><span>Ziffernfeld auf dem Bildschirm anzeigen (für Touch)</span></label>
+      </div>
+      <details id="adv">
+        <summary>Erweitert</summary>
+        <label class="check"><input type="checkbox" id="in-timed" checked><span>Im Training Balken und Zeitlimit pro Aufgabe einblenden. Ausgeschaltet gibt es unbegrenzt Zeit pro Aufgabe.</span></label>
+        <div class="field">
+          <label for="in-shrink">Balken wird kürzer pro richtiger Antwort <output id="o-shrink" for="in-shrink"></output></label>
+          <input id="in-shrink" type="range" min="0" max="10" step="0.5" value="2.5">
+        </div>
+        <label class="check"><input type="checkbox" id="in-reptrain" checked><span>Falsche Aufgaben auch im Training mit Spiel wiederholen</span></label>
+        <div class="field">
+          <label for="in-lock">Eingabesperre nach jedem Wechsel <output id="o-lock" for="in-lock"></output></label>
+          <input id="in-lock" type="range" min="0" max="1500" step="50" value="300">
+          <p class="hint" style="margin-top:4px">Tasten werden so lange ignoriert. Das verhindert versehentliche Doppel-Enter.</p>
+        </div>
+        <div class="field">
+          <label for="in-fb">Richtige Lösung nach einem Fehler zeigen <output id="o-fb" for="in-fb"></output></label>
+          <input id="in-fb" type="range" min="1" max="10" step="0.5" value="3">
+        </div>
+        <div class="field">
+          <span class="lbl">Wiederholung nach … Aufgaben</span>
+          <div class="two">
+            <div><label for="in-rmin" style="font-weight:400">frühestens</label><input id="in-rmin" type="number" min="1" max="20" value="2"></div>
+            <div><label for="in-rmax" style="font-weight:400">spätestens</label><input id="in-rmax" type="number" min="1" max="20" value="5"></div>
+          </div>
+        </div>
+      </details>
+    </div>
+  </div>
+
+  <div class="start-actions">
+    <button type="button" class="primary" id="btn-start">Start</button>
+    <span class="hint" id="start-hint"></span>
+  </div>
+</section>
+
+<!-- ================= TEST ================= -->
+<section id="s-test" hidden>
+  <div id="tl"><i id="tl-fill"></i></div>
+  <div id="topbar">
+    <div id="clock">4:00</div>
+    <button type="button" class="ghost" id="btn-end" tabindex="-1">Beenden</button>
+  </div>
+  <div id="stage">
+    <div id="taskcol">
+      <div id="card" data-state="answer">
+        <div id="eq-row"><span id="eq"></span><span id="slot"><span id="ans"></span><span id="caret"></span><span id="mark" aria-hidden="true">✓</span></span></div>
+        <div id="bar" hidden><i id="bar-fill"></i></div>
+        <p id="note"></p>
+      </div>
+      <div id="keypad" hidden></div>
+    </div>
+    <aside id="gamecol" hidden data-active="false">
+      <canvas id="game"></canvas>
+      <div id="game-foot">
+        <span id="game-score">Treffer 0</span>
+        <button type="button" class="ghost" id="btn-skip" tabindex="-1" hidden>Ohne Schuss weiter</button>
+      </div>
+      <p id="game-hint"></p>
+    </aside>
+  </div>
+</section>
+
+<!-- ================= ERGEBNIS ================= -->
+<section id="s-result" hidden></section>
+
+</main>
+<noscript>Diese Seite braucht JavaScript.</noscript>
+
+<!-- =====================================================================
+     SCRIPT 1: MathCore
+     Reine Aufgabenlogik. Kein DOM, kein Spiel, keine Eingabe, keine Zeitmessung.
+     Eine Rechenart ist ein Modul mit festem Vertrag. Weitere Rechenarten (Division,
+     Rechnen mit Geld …) entstehen als weiteres Modul in MathCore.modules, ohne dass
+     UI, Spiel oder Ablauf angefasst werden müssen.
+
+     Vertrag eines Moduls (settings = die vom Nutzer gewählten Einstellungen dieses Moduls):
+       id, label, menuLabel      Kennung, Anzeigename, Name im Auswahlschalter
+       noun, nounPlural          Wort für eine Gruppe von Aufgaben ("Reihe", "Reihen")
+       groupExample              Beispielsatz für die Auswertung (Aufgabe zählt in mehreren Gruppen)
+       fileName                  Beginn des CSV-Dateinamens
+       settings                  Beschreibung der Einstellungen für den Startbildschirm:
+                                 [{id, type:'multi'|'choice'|'number'|'heading', label, hint, options,
+                                   quick, min, max, placeholder, row, showIf(settings)}]
+       defaults()                Standard-Einstellungen
+       seriesList                alle Gruppen für die Auswertung
+       seriesLabel(g)/seriesName(g)  Kurzname für Tabellen / Langname für Sätze
+       groupsSelected(settings)  Gruppen, die im Moment gewählt sind (für die Markierung)
+       describe(settings)        kurzer Text für die Auswertungskopfzeile
+       maxDigits(settings)       maximale Stellenzahl der Antwort
+       poolSize(settings)        Anzahl möglicher Aufgaben (ohne sie alle zu erzeugen)
+       emptyHint(settings)       Hinweis, wenn es keine Aufgaben gibt
+       sampled(settings)         true: Pool ist zu groß zum Aufzählen und wird pro Runde neu gezogen
+       buildPool(settings)       → Aufgaben {key, data, answer, series:[…]}
+       weight(task)              → 0..1: Wahrscheinlichkeit, dass die Aufgabe in einer Runde dabei ist
+       present(task)             → {key, label, prompt, answer, series, data}
+       patterns                  (optional) zusätzliche Fehlermuster {id,label,title,test(rec)}
+       csvColumns                (optional) zusätzliche CSV-Spalten [{head, get(rec)}]
+       extraReport(ctx)          (optional) rechenartspezifischer Auswertungsblock {title, html, legend}
+     Die UI kennt nur diese Felder. Eine Aufgabe ist für sie Text (prompt) plus Antwort (answer).
+     ===================================================================== -->
+<script id="math-core">
+window.MathCore = (() => {
+  'use strict';
+  const randInt = (lo, hi) => lo + Math.floor(Math.random() * (hi - lo + 1));
+  const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+  const toInt = (v, def) => { const x = parseInt(v, 10); return isFinite(x) ? x : def; };
+
+  /* Fehlermuster, die für jede Rechenart mit Zahlenantwort gelten */
+  const commonPatterns = [
+    { id: 'pm1',  label: '±1',  title: 'Ergebnis um genau 1 daneben (z. B. 13 statt 12)',
+      test: r => r.entered != null && Math.abs(r.entered - r.answer) === 1 },
+    { id: 'pm10', label: '±10', title: 'Ergebnis um genau 10 daneben (z. B. 22 statt 12)',
+      test: r => r.entered != null && Math.abs(r.entered - r.answer) === 10 },
+    { id: 'swap', label: 'Ziffern vertauscht', title: 'Ziffern vertauscht (z. B. 65 statt 56)',
+      test: r => r.entered != null && r.entered !== r.answer && String(r.entered).split('').reverse().join('') === String(r.answer) }
+  ];
+
+  const modules = {};
+
+  /* ======================= Multiplikation (Einmaleins) ======================= */
+  modules.mul = (() => {
+    const SERIES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+    const maxFactor = s => (s >= 11 ? 12 : 10);        // Reihe 11 und 12 gehen bis 12×12
+    const RARE_FACTORS = [1, 10], RARE_P = 0.66;       // 1×X und 10×X erscheinen nur mit 66 % Wahrscheinlichkeit
+    const mix = (a, b, t) => a.map((v, i) => Math.round(v + (b[i] - v) * t));
+    const pick = st => (Array.isArray(st && st.series) ? st.series : []).filter(s => SERIES.includes(s));
+
+    const api = {
+      id: 'mul', label: 'Multiplikation', menuLabel: 'Einmaleins', noun: 'Reihe', nounPlural: 'Reihen',
+      fileName: 'einmaleins', groupExample: '7 × 5 in Reihe 5 und in Reihe 7',
+      seriesList: SERIES,
+      seriesLabel: s => s + 'er',
+      seriesName: s => 'Reihe ' + s,
+
+      settings: [{
+        id: 'series', type: 'multi', label: 'Reihen',
+        options: SERIES.map(s => ({ value: s, label: String(s), title: 'Reihe ' + s })),
+        quick: [{ label: 'Alle', values: SERIES }, { label: 'Nur 1–10', values: SERIES.filter(s => s <= 10) }, { label: 'Keine', values: [] }]
+      }],
+      defaults: () => ({ series: SERIES.filter(s => s <= 10) }),
+      groupsSelected: st => pick(st),
+      describe: st => { const s = pick(st); return s.length === SERIES.length ? 'alle Reihen' : (s.length === 1 ? 'Reihe ' : 'Reihen ') + s.join(', '); },
+      maxDigits: () => 3,
+      emptyHint: () => 'Bitte mindestens eine Reihe wählen.',
+      sampled: () => false,
+
+      buildPool(st) {
+        const seen = new Map();
+        for (const s of pick(st)) for (let k = 1; k <= maxFactor(s); k++) {
+          const lo = Math.min(s, k), hi = Math.max(s, k), key = 'mul:' + lo + 'x' + hi;
+          if (!seen.has(key)) seen.set(key, { key, data: { a: lo, b: hi }, answer: lo * hi, series: lo === hi ? [lo] : [lo, hi] });
+        }
+        return [...seen.values()];
+      },
+      poolSize: st => api.buildPool(st).length,
+      weight(t) { return (RARE_FACTORS.includes(t.data.a) || RARE_FACTORS.includes(t.data.b)) ? RARE_P : 1; },
+      present(t) {
+        const sw = t.data.a !== t.data.b && Math.random() < 0.5;
+        const a = sw ? t.data.b : t.data.a, b = sw ? t.data.a : t.data.b;
+        return { key: t.key, label: a + ' × ' + b, prompt: a + ' × ' + b + ' =', answer: t.answer, series: t.series, data: { a, b } };
+      },
+
+      patterns: [],
+      csvColumns: [{ head: 'Faktor_1', get: r => r.data.a }, { head: 'Faktor_2', get: r => r.data.b }],
+
+      /* Spezifische Auswertung: Raster aller Einzelaufgaben, eingefärbt nach Fehlerquote.
+         Jede Aufgabe steht nur einmal (obere Hälfte), 3 × 7 und 7 × 3 werden zusammengezählt. */
+      extraReport({ log }) {
+        const stat = new Map();
+        log.forEach(r => {
+          const k = Math.min(r.data.a, r.data.b) + 'x' + Math.max(r.data.a, r.data.b), s = stat.get(k) || { n: 0, err: 0 };
+          s.n++; if (r.kind !== 'ok') s.err++; stat.set(k, s);
+        });
+        let h = '<div class="heat"><span class="hd"></span>' + SERIES.map(b => `<span class="hd">${b}</span>`).join('');
+        SERIES.forEach(a => {
+          h += `<span class="hd">${a}</span>`;
+          SERIES.forEach(b => {
+            if (b < a) { h += '<span class="x" aria-hidden="true"></span>'; return; }   // 7 × 3 steht schon bei 3 × 7
+            const s = stat.get(Math.min(a, b) + 'x' + Math.max(a, b)), title = `${a} × ${b} = ${a * b}`;
+            if (!s) h += `<span class="e0" title="${title}: nicht geübt"></span>`;
+            else if (!s.err) h += `<span class="ok" title="${title}: ${s.n}× gefragt, alles richtig"></span>`;
+            else {
+              const rate = s.err / s.n, c = mix([243, 223, 180], [178, 79, 63], Math.min(1, rate * 1.4));
+              h += `<span style="background:rgb(${c});color:${rate > 0.4 ? '#fff' : '#1c2a35'}" title="${title}: ${s.n}× gefragt, ${s.err} Fehler">${s.err}</span>`;
+            }
+          });
+        });
+        h += '</div>';
+        const legend = '<span><i style="background:var(--tealL)"></i>alles richtig</span><span><i style="background:rgb(243,223,180)"></i>wenige Fehler</span><span><i style="background:rgb(178,79,63)"></i>viele Fehler (Zahl = Fehler)</span><span><i style="border:1px dashed var(--line)"></i>nicht geübt</span><span><i style="background:#dfe5e8"></i>ausgegraut: Tauschaufgabe, wird bei der anderen Reihenfolge mitgezählt (3 × 7 und 7 × 3 zusammen)</span>';
+        return { title: 'Einzelne Aufgaben', html: h, legend };
+      }
+    };
+    return api;
+  })();
+
+  /* ======================= Plus und Minus ======================= */
+  modules.addsub = (() => {
+    const LIMIT = 1000;          // Zahlen über 1000 werden nicht angenommen
+    const ENUM_MAX = 20000;      // bis hierhin wird der Pool vollständig aufgezählt, darüber gezogen
+    const SAMPLE_N = 400;        // so viele Aufgaben enthält ein gezogener Pool
+    const GROUPS = {
+      plus:  { label: 'Plus',  name: 'Plus-Aufgaben' },
+      minus: { label: 'Minus', name: 'Minus-Aufgaben' },
+      ue:    { label: 'mit Überschreitung',  name: 'Aufgaben mit Zehnerüberschreitung' },
+      ohne:  { label: 'ohne Überschreitung', name: 'Aufgaben ohne Zehnerüberschreitung' }
+    };
+    const LIST = ['plus', 'minus', 'ue', 'ohne'];
+    const defaults = () => ({ ops: 'mixed', range: 20, rangeMax: 50, minNum: 1, maxNum: null, cross: 'yes' });
+
+    /* Einstellungen auf gültige Werte bringen */
+    function norm(st) {
+      const d = defaults(); st = st || {};
+      const ops = ['plus', 'minus', 'mixed'].includes(st.ops) ? st.ops : d.ops;
+      const range = [10, 12, 20, 100, 'free'].includes(st.range) ? st.range : d.range;
+      const R = range === 'free' ? clamp(toInt(st.rangeMax, d.rangeMax), 10, LIMIT) : range;
+      const lo = clamp(toInt(st.minNum, d.minNum), 0, R);
+      const noMax = st.maxNum === null || st.maxNum === undefined || st.maxNum === '';
+      const hi = clamp(noMax ? R : toInt(st.maxNum, R), lo, R);
+      const cross = ['no', 'yes', 'only'].includes(st.cross) ? st.cross : d.cross;
+      return { ops, range, R, lo, hi, cross };
+    }
+
+    /* Zehnerüberschreitung:
+       Plus:  die Einer ergeben zusammen mehr als 10 (8 + 5, 17 + 6). Genau auf den Zehner kommen (7 + 3) zählt nicht.
+       Minus: die Einer der ersten Zahl sind kleiner als die der zweiten (13 − 5, 20 − 3).
+       Im Zahlenraum 10 gibt es keine Zehnerüberschreitung. */
+    const crosses = (op, a, b, R) => R > 10 && (op === '+' ? (a % 10) + (b % 10) > 10 : (a % 10) < (b % 10));
+
+    function each(n, cb) {
+      const ops = n.ops === 'mixed' ? ['+', '-'] : [n.ops === 'plus' ? '+' : '-'];
+      for (const op of ops) for (let a = n.lo; a <= n.hi; a++) {
+        const bMax = op === '+' ? Math.min(n.hi, n.R - a) : Math.min(n.hi, a);   // Summe im Zahlenraum, Ergebnis nie negativ
+        for (let b = n.lo; b <= bMax; b++) {
+          const x = crosses(op, a, b, n.R);
+          if (n.cross === 'no' && x) continue;
+          if (n.cross === 'only' && !x) continue;
+          cb(op, a, b, x);
+        }
+      }
+    }
+    let memo = { key: '', n: 0 };
+    function count(n) {
+      const key = JSON.stringify(n);
+      if (memo.key !== key) { let c = 0; each(n, () => { c++; }); memo = { key, n: c }; }
+      return memo.n;
+    }
+    const taskOf = (op, a, b, x) => ({
+      key: 'as:' + op + ':' + a + ':' + b, data: { a, b, op }, answer: op === '+' ? a + b : a - b,
+      series: [op === '+' ? 'plus' : 'minus', x ? 'ue' : 'ohne']
+    });
+    const sym = op => (op === '+' ? '+' : '−');
+    const CROSS_TXT = { no: 'ohne Zehnerüberschreitung', yes: 'mit und ohne Zehnerüberschreitung', only: 'nur mit Zehnerüberschreitung' };
+    const OPS_TXT = { plus: 'Plus', minus: 'Minus', mixed: 'Plus und Minus' };
+
+    const api = {
+      id: 'addsub', label: 'Addition und Subtraktion', menuLabel: 'Plus und Minus', noun: 'Aufgabentyp', nounPlural: 'Aufgabentypen',
+      fileName: 'plusminus', groupExample: '8 + 5 in „Plus“ und in „mit Überschreitung“',
+      seriesList: LIST,
+      seriesLabel: g => GROUPS[g].label,
+      seriesName: g => GROUPS[g].name,
+
+      settings: [
+        { id: 'ops', type: 'choice', label: 'Rechenart',
+          options: [{ value: 'plus', label: 'Plus' }, { value: 'minus', label: 'Minus' }, { value: 'mixed', label: 'Gemischt' }] },
+        { id: 'range', type: 'choice', label: 'Zahlenraum',
+          options: [{ value: 10, label: '10' }, { value: 12, label: '12' }, { value: 20, label: '20' }, { value: 100, label: '100' }, { value: 'free', label: 'frei' }],
+          hint: 'Alle Zahlen und alle Ergebnisse liegen zwischen 0 und dem Zahlenraum.' },
+        { id: 'rangeMax', type: 'number', label: 'Obergrenze für „frei“', min: 10, max: LIMIT, showIf: s => s.range === 'free',
+          hint: 'Höchstens 1000. Größere Zahlen werden nicht angenommen.' },
+        { type: 'heading', label: 'Höhe der Zahlen', hint: 'Gilt für beide Zahlen in der Aufgabe. „Bis“ leer lassen heißt: bis zum Zahlenraum.' },
+        { id: 'minNum', type: 'number', label: 'von', min: 0, max: LIMIT, row: 'hoehe' },
+        { id: 'maxNum', type: 'number', label: 'bis', min: 1, max: LIMIT, row: 'hoehe', placeholder: 'Zahlenraum' },
+        { id: 'cross', type: 'choice', label: 'Zehnerüberschreitung',
+          options: [{ value: 'no', label: 'nein' }, { value: 'yes', label: 'ja' }, { value: 'only', label: 'nur mit' }],
+          hint: 'Nein: nur Aufgaben ohne. Ja: beide Arten gemischt. Nur mit: ausschließlich Aufgaben mit Überschreitung. Plus: Die Einer ergeben zusammen mehr als 10 (8 + 5). Minus: Die Einer der ersten Zahl sind kleiner als die der zweiten (13 − 5, auch 20 − 3). Genau auf den Zehner kommen (7 + 3) zählt nicht. Im Zahlenraum 10 gibt es keine Zehnerüberschreitung.' }
+      ],
+      defaults,
+      groupsSelected: () => [],
+      describe(st) {
+        const n = norm(st);
+        return OPS_TXT[n.ops] + ', Zahlenraum ' + n.R + (n.lo !== 1 || n.hi !== n.R ? ', Zahlen ' + n.lo + ' bis ' + n.hi : '') + ', ' + CROSS_TXT[n.cross];
+      },
+      maxDigits: st => String(norm(st).R).length,
+      poolSize: st => count(norm(st)),
+      emptyHint: () => 'Mit diesen Einstellungen gibt es keine Aufgaben. Mach den Zahlenraum größer oder ändere die Zehnerüberschreitung.',
+      sampled: st => count(norm(st)) > ENUM_MAX,
+
+      buildPool(st) {
+        const n = norm(st);
+        if (count(n) <= ENUM_MAX) { const out = []; each(n, (op, a, b, x) => out.push(taskOf(op, a, b, x))); return out; }
+        // sehr großer Aufgabenraum: zufällige Auswahl (neu gezogen in jeder Runde)
+        const ops = n.ops === 'mixed' ? ['+', '-'] : [n.ops === 'plus' ? '+' : '-'], map = new Map();
+        for (let i = 0; i < 200000 && map.size < SAMPLE_N; i++) {
+          const op = ops[randInt(0, ops.length - 1)], a = randInt(n.lo, n.hi);
+          const bMax = op === '+' ? Math.min(n.hi, n.R - a) : Math.min(n.hi, a);
+          if (bMax < n.lo) continue;
+          const b = randInt(n.lo, bMax), x = crosses(op, a, b, n.R);
+          if (n.cross === 'no' && x) continue;
+          if (n.cross === 'only' && !x) continue;
+          const t = taskOf(op, a, b, x); map.set(t.key, t);
+        }
+        return [...map.values()];
+      },
+      weight: () => 1,
+      present(t) {
+        const label = t.data.a + ' ' + sym(t.data.op) + ' ' + t.data.b;
+        return { key: t.key, label, prompt: label + ' =', answer: t.answer, series: t.series, data: t.data };
+      },
+
+      patterns: [{
+        id: 'opswap', label: 'Zeichen verwechselt', title: 'Ergebnis der anderen Rechenart (z. B. 12 − 5 = 17 statt 7)',
+        test: r => r.entered != null && r.data && r.entered === (r.data.op === '+' ? r.data.a - r.data.b : r.data.a + r.data.b)
+      }],
+      csvColumns: [{ head: 'Zahl_1', get: r => r.data.a }, { head: 'Rechenzeichen', get: r => sym(r.data.op) }, { head: 'Zahl_2', get: r => r.data.b }]
+    };
+    return api;
+  })();
+
+  /* ======================= Aufgabenquelle (für jede Rechenart gleich) =======================
+     Jede Runde enthält jede Aufgabe höchstens einmal. Aufgaben mit weight < 1 sind nur mit
+     dieser Wahrscheinlichkeit in der Runde. Dieselbe Aufgabe kommt nie zweimal direkt
+     hintereinander. Sehr große Aufgabenräume (mod.sampled) werden in jeder Runde neu gezogen. */
+  function createTaskSource(mod, settings) {
+    let pool = mod.buildPool(settings), bag = [], lastKey = null;
+    const resample = !!(mod.sampled && mod.sampled(settings));
+    const refill = () => {
+      if (resample) pool = mod.buildPool(settings);
+      let pick, guard = 0;
+      do { pick = pool.filter(t => Math.random() < mod.weight(t)); guard++; }
+      while ((!pick.length || (pick.length === 1 && pick[0].key === lastKey && pool.length > 1)) && guard < 50);
+      if (!pick.length) pick = pool.slice();
+      bag = shuffle(pick);
+      const n = bag.length;
+      if (n > 1 && bag[n - 1].key === lastKey) { const j = randInt(0, n - 2); [bag[n - 1], bag[j]] = [bag[j], bag[n - 1]]; }
+    };
+    return {
+      size: pool.length,
+      next() { if (!bag.length) refill(); const t = bag.pop(); lastKey = t.key; return mod.present(t); }
+    };
+  }
+
+  return { modules, commonPatterns, createTaskSource, randInt, shuffle };
+})();
+</script>
+
+<!-- =====================================================================
+     SCRIPT 2: App
+     UI, Ablauf der Sitzung, Eingabe, Ton, Spiel, Auswertung, CSV.
+     Von der Rechenart kennt dieser Teil nur den Modulvertrag (siehe oben).
+     ===================================================================== -->
+<script id="app">
+(() => {
+'use strict';
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const { modules: MODULES, commonPatterns, createTaskSource, randInt } = window.MathCore;
+
+const TIME_PATTERN = { id: 'time', label: 'Zeit', title: 'Balken abgelaufen, keine Antwort', test: r => r.kind === 'timeout' };
+
+/* ---------- Hilfen ---------- */
+const median = arr => {
+  if (!arr.length) return null;
+  const a = arr.slice().sort((x, y) => x - y), m = a.length >> 1;
+  return a.length % 2 ? a[m] : (a[m - 1] + a[m]) / 2;
+};
+const fmtN = (x, d = 1) => x == null ? '–' : x.toLocaleString('de-DE', { minimumFractionDigits: d, maximumFractionDigits: d });
+const fmtPct = x => x == null ? '–' : Math.round(x * 100) + ' %';
+const mmss = sec => Math.floor(sec / 60) + ':' + String(Math.floor(sec % 60)).padStart(2, '0');
+const modeLabel = m => m === 'train' ? 'Training mit Spiel' : 'Reizarm';
+
+/* =====================================================================
+   TON (Web Audio, keine Dateien)
+   ===================================================================== */
+let actx = null;
+function ensureAudio() {
+  try {
+    if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+    if (actx.state === 'suspended') actx.resume();
+  } catch (e) { actx = null; }
+}
+function tone(freq, t0, dur, vol) {
+  const o = actx.createOscillator(), g = actx.createGain();
+  o.type = 'sine'; o.frequency.value = freq;
+  g.gain.setValueAtTime(0.0001, t0);
+  g.gain.linearRampToValueAtTime(vol, t0 + 0.03);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  o.connect(g); g.connect(actx.destination);
+  o.start(t0); o.stop(t0 + dur + 0.05);
+}
+function playOk(force, fast) {
+  if (!actx || !(force || (S && S.cfg.sound))) return;
+  const t = actx.currentTime;
+  tone(523.25, t, 0.40, 0.11);              // C5
+  tone(659.25, t + 0.10, 0.50, 0.09);       // E5
+  if (fast) tone(783.99, t + 0.20, 0.55, 0.08);  // G5: schnelle Antwort, leicht anderer Klang
+}
+function playHit() {
+  if (!actx || !(S && S.cfg.sound)) return;
+  const t = actx.currentTime;
+  tone(784, t, 0.18, 0.09); tone(1046.5, t + 0.07, 0.30, 0.07);
+}
+
+/* =====================================================================
+   BOGENSPIEL (gekapselt: kennt weder Aufgaben noch Sitzung)
+   API: init(canvas), start(arrows, now), shoot(now), update(dt, now), draw(now),
+        cancel(), arrowsLeft(), Callbacks onHit() und onDone()
+   ===================================================================== */
+const Game = (() => {
+  const W = 560, H = 340, BY = H / 2, BOWX = 84, TR = 30;
+  const V = 70, AV = V * 4, ARROW_LEN = 78;                 // Pfeil etwa 4× so schnell wie eine Zielscheibe
+  const BOW_R = 64, BOW_T = 0.95;
+  const STRING_X = BOWX - BOW_R + Math.cos(BOW_T) * BOW_R;
+  const TIP0 = STRING_X - 16 + ARROW_LEN;
+  const LANES = [W - 70, W - 148, W - 226];                 // Zielscheiben fallen auf drei Bahnen
+  const MISS_Y = BY + TR + 16;                              // ab hier ist eine Zielscheibe nicht mehr zu treffen
+  let ctx = null;
+  const st = { phase: 'idle', arrows: 0, arrow: null, targets: [], spawns: [], endAt: 0, cooldown: 0 };
+  const api = { onHit() {}, onDone() {} };
+
+  api.init = canvas => {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = W * dpr; canvas.height = H * dpr;
+    ctx = canvas.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  };
+  api.active = () => st.phase === 'active';
+  api.arrowsLeft = () => st.arrows;
+  api.cancel = () => { st.phase = 'idle'; st.arrow = null; st.targets = []; st.spawns = []; st.arrows = 0; st.endAt = 0; };
+
+  /* Pro Phase fallen mehrere Zielscheiben nacheinander, jede mit eigener Geschwindigkeit */
+  api.start = (arrows, now) => {
+    st.phase = 'active'; st.arrows = arrows; st.arrow = null; st.targets = []; st.endAt = 0; st.cooldown = 0;
+    const order = [0, 1, 2].sort(() => Math.random() - 0.5), n = arrows + 2;
+    st.spawns = Array.from({ length: n }, (_, i) => ({
+      at: now + 150 + i * 520 + Math.random() * 160, lane: order[i % 3], mult: 0.7 + Math.random() * 0.8
+    }));
+  };
+  api.shoot = now => {
+    if (st.phase !== 'active' || st.arrows <= 0 || st.arrow || now < st.cooldown) return false;
+    st.arrows--; st.arrow = { tip: TIP0 }; return true;
+  };
+  api.update = (dt, now) => {
+    if (st.phase !== 'active') return;
+    while (st.spawns.length && st.spawns[0].at <= now) {
+      const s = st.spawns.shift();
+      st.targets.push({ x: LANES[s.lane], y: -TR, v: V * s.mult, hit: false, hitAt: 0 });
+    }
+    st.targets.forEach(t => { if (!t.hit) t.y += t.v * dt / 1000; });
+    const a = st.arrow;
+    if (a) {
+      a.tip += AV * dt / 1000;
+      const tail = a.tip - ARROW_LEN;
+      let best = null;
+      for (const t of st.targets) {
+        if (t.hit) continue;
+        const dy = Math.abs(BY - t.y); if (dy > TR) continue;
+        const half = Math.sqrt(TR * TR - dy * dy);
+        if (a.tip >= t.x - half && tail <= t.x + half && (!best || t.x < best.x)) best = t;
+      }
+      if (best) { best.hit = true; best.hitAt = now; st.arrow = null; st.cooldown = now + 150; api.onHit(); }
+      else if (tail > W) { st.arrow = null; st.cooldown = now + 150; }
+    }
+    st.targets = st.targets.filter(t => !(t.hit && now - t.hitAt > 650) && t.y < H + TR);
+    const canHit = st.spawns.length > 0 || st.targets.some(t => !t.hit && t.y <= MISS_Y);
+    const resolved = !st.arrow && (st.arrows <= 0 || !canHit);
+    if (resolved) {
+      if (!st.endAt) st.endAt = now + (st.arrows <= 0 ? 650 : 350);
+      if (now >= st.endAt) { st.phase = 'idle'; st.targets = []; st.endAt = 0; api.onDone(); }
+    } else st.endAt = 0;
+  };
+
+  function drawBow(c, armed) {
+    const cx = BOWX - BOW_R, ty = Math.sin(BOW_T) * BOW_R, pull = armed ? 16 : 0;
+    c.lineCap = 'round'; c.lineJoin = 'round';
+    c.strokeStyle = '#8a5a2b'; c.lineWidth = 8;
+    c.beginPath(); c.arc(cx, BY, BOW_R, -BOW_T, BOW_T); c.stroke();
+    c.strokeStyle = '#4f5d66'; c.lineWidth = 2;
+    c.beginPath(); c.moveTo(STRING_X, BY - ty); c.lineTo(STRING_X - pull, BY); c.lineTo(STRING_X, BY + ty); c.stroke();
+  }
+  function drawArrow(c, tip, y, len, small) {
+    const tail = tip - len;
+    c.lineCap = 'round';
+    c.strokeStyle = '#6b5338'; c.lineWidth = small ? 2.5 : 3.5;
+    c.beginPath(); c.moveTo(tail, y); c.lineTo(tip - 8, y); c.stroke();
+    c.fillStyle = '#3f4d57';
+    const hs = small ? 0.7 : 1;
+    c.beginPath(); c.moveTo(tip, y); c.lineTo(tip - 14 * hs, y - 6 * hs); c.lineTo(tip - 14 * hs, y + 6 * hs); c.closePath(); c.fill();
+    if (!small) {
+      c.strokeStyle = '#2b7a78'; c.lineWidth = 3;
+      [[0, -7], [10, -7], [0, 7], [10, 7]].forEach(([dx, dy]) => { c.beginPath(); c.moveTo(tail + dx + 7, y); c.lineTo(tail + dx, y + dy); c.stroke(); });
+    }
+  }
+  function drawTarget(c, t, now) {
+    [[1, '#f4f0e6'], [0.78, '#b24f3f'], [0.56, '#f4f0e6'], [0.34, '#b24f3f'], [0.13, '#e2ad3d']].forEach(([f, col]) => {
+      c.fillStyle = col; c.beginPath(); c.arc(t.x, t.y, TR * f, 0, Math.PI * 2); c.fill();
+    });
+    c.strokeStyle = '#6a5a4a'; c.lineWidth = 2; c.beginPath(); c.arc(t.x, t.y, TR, 0, Math.PI * 2); c.stroke();
+    if (t.hit) {
+      const p = Math.min(1, (now - t.hitAt) / 600);
+      c.save(); c.globalAlpha = 1 - p; c.strokeStyle = '#2b7a78'; c.lineWidth = 4;
+      c.beginPath(); c.arc(t.x, t.y, TR + 6 + p * 34, 0, Math.PI * 2); c.stroke(); c.restore();
+    }
+  }
+  api.draw = now => {
+    const c = ctx; if (!c) return;
+    c.clearRect(0, 0, W, H);
+    const g = c.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#e9f0f0'); g.addColorStop(1, '#dbe6e6');
+    c.fillStyle = g; c.fillRect(0, 0, W, H);
+    c.save(); c.setLineDash([4, 9]); c.strokeStyle = '#b3c4c6'; c.lineWidth = 2;
+    c.beginPath(); c.moveTo(BOWX + 40, BY); c.lineTo(W - 8, BY); c.stroke(); c.restore();
+    st.targets.forEach(t => drawTarget(c, t, now));
+    const armed = st.phase === 'active' && st.arrows > 0 && !st.arrow;
+    drawBow(c, armed);
+    if (armed) drawArrow(c, TIP0, BY, ARROW_LEN, false);
+    if (st.arrow) drawArrow(c, st.arrow.tip, BY, ARROW_LEN, false);
+    if (st.phase === 'active') for (let i = 0; i < st.arrows; i++) drawArrow(c, 58, H - 18 - i * 14, 40, true);   // Köcher
+  };
+  return api;
+})();
+
+/* =====================================================================
+   ZUSTAND
+   ===================================================================== */
+let S = null;          // aktuelle Sitzung
+let raf = 0, lastFrame = 0, lastClock = '';
+
+/* =====================================================================
+   START-BILDSCHIRM
+   Die Einstellungen der gewählten Rechenart werden aus mod.settings aufgebaut.
+   ===================================================================== */
+const STORE_KEY = 'einmaleins-trainer-v3';
+const MOD_IDS = Object.keys(MODULES);
+let curModId = MOD_IDS[0];
+const modState = {};                                   // Einstellungen je Rechenart
+MOD_IDS.forEach(id => { modState[id] = MODULES[id].defaults(); });
+const curMod = () => MODULES[curModId];
+let fieldEls = [];
+
+function mk(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+
+function renderChooser() {
+  const box = $('mod-chooser'); box.innerHTML = '';
+  MOD_IDS.forEach(id => {
+    const b = mk('button', '', MODULES[id].menuLabel);
+    b.type = 'button'; b.setAttribute('aria-pressed', id === curModId);
+    b.addEventListener('click', () => { curModId = id; renderChooser(); renderModSettings(); });
+    box.appendChild(b);
+  });
+}
+
+function renderModSettings() {
+  const box = $('mod-settings'); box.innerHTML = ''; fieldEls = [];
+  const mod = curMod(), st = modState[curModId];
+  let rowBox = null, rowId = null;
+  mod.settings.forEach(f => {
+    const wrap = mk('div', 'field');
+    let sync = () => {};
+    if (f.type === 'number') {
+      const lab = mk('label', 'lbl', f.label); lab.htmlFor = 'f-' + f.id; wrap.appendChild(lab);
+      const inp = mk('input'); inp.type = 'number'; inp.id = 'f-' + f.id; inp.inputMode = 'numeric';
+      if (f.min != null) inp.min = f.min;
+      if (f.max != null) inp.max = f.max;
+      if (f.placeholder) inp.placeholder = f.placeholder;
+      inp.addEventListener('input', () => {
+        const t = inp.value.trim(), v = t === '' ? null : parseInt(t, 10);
+        st[f.id] = Number.isNaN(v) ? null : v; syncStart();
+      });
+      inp.addEventListener('change', () => {                       // Werte außerhalb der Grenzen werden korrigiert (z. B. über 1000)
+        if (st[f.id] != null) st[f.id] = Math.min(f.max != null ? f.max : Infinity, Math.max(f.min != null ? f.min : -Infinity, st[f.id]));
+        syncAll();
+      });
+      wrap.appendChild(inp);
+      sync = () => { if (document.activeElement !== inp) inp.value = st[f.id] == null ? '' : st[f.id]; };
+    } else {
+      wrap.appendChild(mk('div', 'lbl', f.label));
+      if (f.type === 'multi') {
+        const grid = mk('div', 'series-grid'); grid.setAttribute('role', 'group'); grid.setAttribute('aria-label', f.label);
+        const btns = f.options.map(o => {
+          const b = mk('button', 'sbtn', o.label); b.type = 'button'; if (o.title) b.setAttribute('aria-label', o.title);
+          b.addEventListener('click', () => {
+            const set = new Set(st[f.id]); set.has(o.value) ? set.delete(o.value) : set.add(o.value);
+            st[f.id] = f.options.map(x => x.value).filter(v => set.has(v)); syncAll();
+          });
+          grid.appendChild(b); return { b, o };
+        });
+        wrap.appendChild(grid);
+        if (f.quick) {
+          const q = mk('div', 'quick');
+          f.quick.forEach(qq => { const b = mk('button', 'link', qq.label); b.type = 'button'; b.addEventListener('click', () => { st[f.id] = qq.values.slice(); syncAll(); }); q.appendChild(b); });
+          wrap.appendChild(q);
+        }
+        sync = () => btns.forEach(({ b, o }) => b.setAttribute('aria-pressed', st[f.id].includes(o.value)));
+      } else if (f.type === 'choice') {
+        const seg = mk('div', 'seg'); seg.setAttribute('role', 'group'); seg.setAttribute('aria-label', f.label);
+        const btns = f.options.map(o => {
+          const b = mk('button', '', o.label); b.type = 'button';
+          b.addEventListener('click', () => { st[f.id] = o.value; syncAll(); });
+          seg.appendChild(b); return { b, o };
+        });
+        wrap.appendChild(seg);
+        sync = () => btns.forEach(({ b, o }) => b.setAttribute('aria-pressed', st[f.id] === o.value));
+      }
+    }
+    if (f.hint) wrap.appendChild(mk('p', 'hint', f.hint));
+    if (f.row) {
+      if (rowId !== f.row) { rowBox = mk('div', 'two'); box.appendChild(rowBox); rowId = f.row; }
+      rowBox.appendChild(wrap);
+    } else { rowId = null; box.appendChild(wrap); }
+    fieldEls.push({ f, wrap, sync });
+  });
+  syncAll();
+}
+function syncAll() {
+  const st = modState[curModId];
+  fieldEls.forEach(e => { e.sync(); e.wrap.hidden = e.f.showIf ? !e.f.showIf(st) : false; });
+  syncStart();
+}
+function syncStart() {
+  const mod = curMod(), st = modState[curModId], n = mod.poolSize(st);
+  $('pool-info').textContent = n
+    ? (mod.sampled(st) ? 'Sehr viele mögliche Aufgaben (über 20.000). Sie werden zufällig gezogen.' : n.toLocaleString('de-DE') + ' verschiedene Aufgaben im Pool.')
+    : mod.emptyHint(st);
+  $('btn-start').disabled = !n;
+  $('start-hint').textContent = n ? '' : 'Mit diesen Einstellungen gibt es keine Aufgaben.';
+}
+
+function syncOutputs() {
+  const v = id => +$(id).value;
+  $('o-min').textContent = v('in-min') + (v('in-min') === 1 ? ' Minute' : ' Minuten');
+  $('o-bar').textContent = fmtN(v('in-bar'), 1) + ' s';
+  $('o-minbar').textContent = fmtN(Math.min(v('in-minbar'), v('in-bar')), 1) + ' s';
+  $('o-lock').textContent = v('in-lock') + ' ms';
+  $('o-fb').textContent = fmtN(v('in-fb'), 1) + ' s';
+  $('o-shrink').textContent = fmtN(v('in-shrink'), 1) + ' %';
+  $('f-bar').hidden = !(document.querySelector('input[name=mode]:checked').value === 'train' && $('in-timed').checked);
+}
+['in-min','in-bar','in-minbar','in-lock','in-fb','in-shrink'].forEach(id => $(id).addEventListener('input', syncOutputs));
+$('in-timed').addEventListener('change', syncOutputs);
+document.querySelectorAll('input[name=mode]').forEach(r => r.addEventListener('change', syncOutputs));
+$('btn-testtone').addEventListener('click', () => { ensureAudio(); playOk(true); });
+
+function readCfg() {
+  const num = (id, def, lo, hi) => { let v = parseFloat(String($(id).value).replace(',', '.')); if (!isFinite(v)) v = def; return Math.min(hi, Math.max(lo, v)); };
+  const repMin = Math.round(num('in-rmin', 2, 1, 20));
+  const repMax = Math.max(repMin, Math.round(num('in-rmax', 5, 1, 20)));
+  const barSec = num('in-bar', 6, 2, 20);
+  return {
+    module: curModId,
+    settings: JSON.parse(JSON.stringify(modState[curModId])),
+    mode: document.querySelector('input[name=mode]:checked').value,
+    minutes: Math.round(num('in-min', 4, 1, 30)),
+    barSec, minBarSec: Math.min(num('in-minbar', 3, 1, 10), barSec),
+    shrinkPct: num('in-shrink', 2.5, 0, 10),
+    timed: $('in-timed').checked,
+    sound: $('in-sound').checked,
+    keypad: $('in-keypad').checked,
+    lockMs: Math.round(num('in-lock', 300, 0, 2000)),
+    feedbackSec: num('in-fb', 3, 1, 10),
+    repMin, repMax,
+    repInTrain: $('in-reptrain').checked,
+    name: $('in-name').value.trim().slice(0, 40)
+  };
+}
+function applyCfg(c) {
+  if (c.mods) MOD_IDS.forEach(id => { if (c.mods[id] && typeof c.mods[id] === 'object') modState[id] = { ...MODULES[id].defaults(), ...c.mods[id] }; });
+  if (MODULES[c.module]) curModId = c.module;
+  const r = document.querySelector('input[name=mode][value=' + (c.mode === 'train' ? 'train' : 'calm') + ']'); if (r) r.checked = true;
+  const set = (id, v) => { if (v != null) $(id).value = v; };
+  set('in-min', c.minutes); set('in-bar', c.barSec); set('in-minbar', c.minBarSec); set('in-shrink', c.shrinkPct);
+  set('in-lock', c.lockMs); set('in-fb', c.feedbackSec); set('in-rmin', c.repMin); set('in-rmax', c.repMax); set('in-name', c.name);
+  const chk = (id, v) => { if (v != null) $(id).checked = !!v; };
+  chk('in-sound', c.sound); chk('in-keypad', c.keypad); chk('in-reptrain', c.repInTrain); chk('in-timed', c.timed);
+}
+function loadSettings() {
+  let c = null;
+  try { c = JSON.parse(localStorage.getItem(STORE_KEY) || 'null'); } catch (e) {}
+  if (c) applyCfg(c); else $('in-keypad').checked = !!(window.matchMedia && matchMedia('(pointer: coarse)').matches);
+  renderChooser(); renderModSettings(); syncOutputs();
+}
+function saveSettings(c) { try { localStorage.setItem(STORE_KEY, JSON.stringify({ ...c, mods: modState })); } catch (e) {} }
+
+$('btn-start').addEventListener('click', () => {
+  const c = readCfg();
+  if (!MODULES[c.module].poolSize(c.settings)) return;
+  saveSettings(c); startTest(c);
+});
+function show(id) { ['s-start', 's-test', 's-result'].forEach(x => $(x).hidden = x !== id); window.scrollTo(0, 0); }
+
+/* =====================================================================
+   SITZUNGSABLAUF
+   ===================================================================== */
+function startTest(cfg) {
+  ensureAudio();
+  if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+  document.body.dataset.mode = cfg.mode;
+  const mod = MODULES[cfg.module] || MODULES[MOD_IDS[0]], train = cfg.mode === 'train';
+  S = {
+    cfg, mod, source: createTaskSource(mod, cfg.settings), maxDigits: mod.maxDigits(cfg.settings),
+    counter: 0, repQueue: [], log: [], reps: [],
+    activeMs: 0, limitMs: cfg.minutes * 60000,
+    state: 'answer', cur: null, input: '', lockUntil: 0, fbUntil: 0,
+    hits: 0, corrDurs: [], curBarSec: cfg.barSec, rewardArrows: 0,
+    endedActive: 0, finishedAt: null
+  };
+  $('gamecol').hidden = !train;
+  $('keypad').hidden = !cfg.keypad;
+  $('bar').hidden = !(train && cfg.timed);
+  $('taskcol').classList.remove('playing');
+  Game.cancel(); updateGameUi();
+  show('s-test');
+  lastClock = '';
+  nextTask();
+  lastFrame = performance.now();
+  cancelAnimationFrame(raf);
+  raf = requestAnimationFrame(loop);
+}
+
+function nextTask() {
+  if (S.activeMs >= S.limitMs) return endTest('time');
+  const now = performance.now();
+  let task, isRepeat = false;
+  const ri = S.repQueue.findIndex(r => r.due <= S.counter);
+  if (ri >= 0) { task = S.repQueue.splice(ri, 1)[0].task; isRepeat = true; }
+  else task = S.source.next();
+  const barMs = (S.cfg.mode === 'train' && S.cfg.timed && !isRepeat) ? S.curBarSec * 1000 : 0;
+  S.cur = { task, isRepeat, startTs: now, attempts: 0, barMs };
+  S.input = ''; S.state = 'answer'; S.lockUntil = now + S.cfg.lockMs;
+  renderTask();
+}
+
+function renderTask() {
+  const c = S.cur, card = $('card');
+  $('taskcol').classList.remove('playing');
+  $('eq').textContent = c.task.prompt;
+  $('ans').textContent = '';
+  card.dataset.state = 'answer';
+  card.classList.toggle('rep', c.isRepeat);
+  $('note').textContent = c.isRepeat ? 'Noch einmal: Hier zählt nur das richtige Ergebnis.' : '';
+  $('bar').style.visibility = c.barMs > 0 ? 'visible' : 'hidden';
+  $('bar').classList.remove('low'); $('bar-fill').style.transform = 'scaleX(1)';
+  setGameHint();
+}
+
+function typeDigit(d) {
+  if (!S || S.state !== 'answer' || performance.now() < S.lockUntil) return;
+  if (S.input === '0') S.input = '';
+  if (S.input.length >= S.maxDigits) return;
+  S.input += d; $('ans').textContent = S.input;
+}
+function backspace() {
+  if (!S || S.state !== 'answer' || performance.now() < S.lockUntil) return;
+  S.input = S.input.slice(0, -1); $('ans').textContent = S.input;
+}
+
+function makeRec(c, kind, entered, durMs) {
+  const t = c.task;
+  return { n: S.log.length + 1, key: t.key, label: t.label, prompt: t.prompt, answer: t.answer, data: t.data, series: t.series,
+           entered, kind, durMs, endMs: S.activeMs };
+}
+function scheduleRep(c) {
+  if (S.cfg.mode === 'train' && !S.cfg.repInTrain) return;
+  S.repQueue.push({ task: c.task, due: S.counter + randInt(S.cfg.repMin, S.cfg.repMax) });
+}
+
+function submit() {
+  const now = performance.now();
+  if (S.state !== 'answer' || now < S.lockUntil || S.input === '') return;
+  const c = S.cur, val = parseInt(S.input, 10), res = c.task.answer, dur = now - c.startTs;
+  if (S.activeMs + dur >= S.limitMs) return endTest('time');   // offene Aufgabe zählt nicht
+
+  if (c.isRepeat) {
+    c.attempts++;
+    if (val === res) {
+      S.activeMs += dur;
+      S.reps.push({ task: c.task, attempts: c.attempts, durMs: dur, endMs: S.activeMs });
+      playOk(); feedback('ok');
+    } else { S.input = ''; $('ans').textContent = ''; }          // falsche Eingabe wird verworfen
+    return;
+  }
+  S.activeMs += dur;
+  if (val === res) {
+    S.log.push(makeRec(c, 'ok', val, dur)); S.counter++;
+    const train = S.cfg.mode === 'train';
+    // schnell = unter Medianzeit minus 10 % (Median der bisherigen richtigen Erstversuche, mindestens 5)
+    const fast = train && S.corrDurs.length >= 5 && dur < 0.9 * median(S.corrDurs);
+    S.corrDurs.push(dur);
+    if (train && S.cfg.timed) S.curBarSec = Math.max(S.cfg.minBarSec, S.curBarSec * (1 - S.cfg.shrinkPct / 100));
+    playOk(false, fast);
+    if (train) startReward(fast ? 2 : 1); else feedback('ok');
+  } else {
+    S.log.push(makeRec(c, 'wrong', val, dur)); S.counter++;
+    scheduleRep(c); feedback('wrong', val);
+  }
+}
+function onTimeout() {
+  const c = S.cur, dur = c.barMs;
+  S.activeMs += dur;
+  S.log.push(makeRec(c, 'timeout', null, dur)); S.counter++;
+  scheduleRep(c); feedback('timeout');
+}
+
+function feedback(kind, val) {
+  const now = performance.now(), c = S.cur;
+  S.state = 'feedback'; $('card').dataset.state = kind;
+  $('ans').textContent = String(c.task.answer);
+  if (kind === 'ok') { S.fbUntil = now + 500; $('note').textContent = ''; }
+  else {
+    S.fbUntil = now + S.cfg.feedbackSec * 1000;
+    $('note').textContent = kind === 'timeout' ? 'Zeit abgelaufen.' : 'Du hast ' + val + ' eingegeben.';
+  }
+}
+
+/* ---------- Belohnungsphase (Spiel) ---------- */
+function startReward(arrows) {
+  const now = performance.now();
+  S.state = 'reward'; S.lockUntil = now + S.cfg.lockMs; S.rewardArrows = arrows;
+  $('taskcol').classList.add('playing');          // Aufgabe ausblenden, solange gespielt wird
+  Game.start(arrows, now);
+  setGameHint();
+}
+function shoot() {
+  const now = performance.now();
+  if (!S || S.state !== 'reward' || now < S.lockUntil) return;
+  Game.shoot(now);
+}
+function finishReward() {
+  Game.cancel();
+  if (S && S.state === 'reward') nextTask();
+}
+Game.onHit = () => { S.hits++; playHit(); updateGameUi(); };
+Game.onDone = () => finishReward();
+Game.init($('game'));
+
+function updateGameUi() { $('game-score').textContent = 'Treffer ' + (S ? S.hits : 0); }
+function setGameHint() {
+  const active = !!S && S.state === 'reward';
+  $('gamecol').dataset.active = active;
+  $('btn-skip').hidden = !active;
+  $('game-hint').textContent = active
+    ? (S.rewardArrows > 1 ? 'Schnell gerechnet: 2 Pfeile. Leertaste, Klick oder Enter schießt.' : 'Leertaste, Klick oder Enter schießt.')
+    : 'Richtige Antworten bringen Pfeile, schnelle Antworten zwei.';
+}
+
+/* ---------- Hauptschleife ---------- */
+function loop() {
+  if (!S || S.state === 'ended') return;
+  const now = performance.now(), dt = Math.min(50, now - lastFrame); lastFrame = now;
+
+  if (S.state === 'answer') {
+    const c = S.cur, elapsed = now - c.startTs;
+    if (S.activeMs + elapsed >= S.limitMs) { endTest('time'); return; }
+    if (c.barMs > 0) {
+      const frac = 1 - elapsed / c.barMs;
+      if (frac <= 0) onTimeout();
+      else { $('bar-fill').style.transform = 'scaleX(' + frac.toFixed(4) + ')'; $('bar').classList.toggle('low', frac < 0.35); }
+    }
+  } else if (S.state === 'feedback') {
+    if (now >= S.fbUntil) nextTask();
+  } else if (S.state === 'reward') {
+    Game.update(dt, now);
+  }
+  if (S.state === 'ended') return;
+  updateClock(now);
+  if (S.cfg.mode === 'train') Game.draw(now);
+  raf = requestAnimationFrame(loop);
+}
+function updateClock(now) {
+  const used = S.activeMs + (S.state === 'answer' ? now - S.cur.startTs : 0);
+  const txt = mmss(Math.ceil(Math.max(0, S.limitMs - used) / 1000));
+  if (txt !== lastClock) { $('clock').textContent = txt; lastClock = txt; }
+  $('tl-fill').style.transform = 'scaleX(' + Math.min(1, used / S.limitMs).toFixed(4) + ')';
+}
+
+function endTest(reason) {
+  if (!S || S.state === 'ended') return;
+  const now = performance.now();
+  const used = S.activeMs + (S.state === 'answer' ? now - S.cur.startTs : 0);
+  S.endedActive = reason === 'time' ? S.limitMs : Math.min(used, S.limitMs);
+  S.state = 'ended'; S.finishedAt = new Date();
+  Game.cancel();
+  cancelAnimationFrame(raf);
+  renderResult();
+  show('s-result');
+}
+
+/* =====================================================================
+   EINGABE (Tastatur, Ziffernfeld, Klick)
+   ===================================================================== */
+function onEnter() { if (S.state === 'answer') submit(); else if (S.state === 'reward') shoot(); }
+function inTest() { return S && S.state !== 'ended' && !$('s-test').hidden; }
+document.addEventListener('keydown', e => {
+  if (!inTest() || e.ctrlKey || e.metaKey || e.altKey) return;
+  const k = e.key;
+  if (k.length === 1 && k >= '0' && k <= '9') { e.preventDefault(); typeDigit(k); }
+  else if (k === 'Backspace' || k === 'Delete') { e.preventDefault(); backspace(); }
+  else if (k === 'Enter') { e.preventDefault(); if (!e.repeat) onEnter(); }
+  else if (k === ' ') { e.preventDefault(); if (!e.repeat && S.state === 'reward') shoot(); }
+  else if (k === 'Escape') { e.preventDefault(); if (S.state === 'reward') finishReward(); }
+});
+document.addEventListener('keyup', e => { if (inTest() && (e.key === 'Enter' || e.key === ' ')) e.preventDefault(); });
+
+(function buildKeypad() {
+  const kp = $('keypad');
+  ['1','2','3','4','5','6','7','8','9','⌫','0','OK'].forEach(k => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.tabIndex = -1; b.textContent = k;
+    if (k === 'OK') b.className = 'ok'; if (k === '⌫') b.className = 'bk';
+    b.setAttribute('aria-label', k === '⌫' ? 'Löschen' : k === 'OK' ? 'Bestätigen' : k);
+    b.addEventListener('pointerdown', e => {
+      e.preventDefault();
+      if (!inTest()) return;
+      if (k === 'OK') onEnter(); else if (k === '⌫') backspace(); else typeDigit(k);
+    });
+    kp.appendChild(b);
+  });
+})();
+
+$('game').addEventListener('pointerdown', e => { e.preventDefault(); if (inTest()) shoot(); });
+$('btn-skip').addEventListener('mousedown', e => e.preventDefault());
+$('btn-skip').addEventListener('click', e => { e.currentTarget.blur(); if (inTest() && S.state === 'reward') finishReward(); });
+
+let endArm = 0;
+$('btn-end').addEventListener('mousedown', e => e.preventDefault());
+$('btn-end').addEventListener('click', e => {
+  e.currentTarget.blur();
+  if (!endArm) {
+    $('btn-end').textContent = 'Wirklich beenden?';
+    endArm = setTimeout(() => { endArm = 0; $('btn-end').textContent = 'Beenden'; }, 3000);
+  } else {
+    clearTimeout(endArm); endArm = 0; $('btn-end').textContent = 'Beenden';
+    endTest('manual');
+  }
+});
+
+/* =====================================================================
+   AUSWERTUNG (allgemein; rechenartspezifisches kommt aus mod.extraReport)
+   ===================================================================== */
+function activePatterns() {
+  return [...commonPatterns, ...(S.mod.patterns || []), ...(S.cfg.mode === 'train' && S.cfg.timed ? [TIME_PATTERN] : [])];
+}
+function metrics(recs, pats) {
+  const n = recs.length, errs = recs.filter(r => r.kind !== 'ok'), oks = recs.filter(r => r.kind === 'ok');
+  const m = { n, err: errs.length, rate: n ? errs.length / n : null,
+              med: median(recs.map(r => r.durMs)), medOk: median(oks.map(r => r.durMs)), p: {} };
+  pats.forEach(p => { m.p[p.id] = errs.filter(p.test).length; });
+  m.score = n ? 10 * (m.err / n + 2) * Math.pow(m.med / 1000, 2) : null;   // Dauer = Median in Sekunden
+  return m;
+}
+function analyse() {
+  const pats = activePatterns();
+  const sel = S.mod.groupsSelected(S.cfg.settings);
+  const rows = S.mod.seriesList.map((s, si) => ({ s, si, selected: sel.includes(s), ...metrics(S.log.filter(r => r.series.includes(s)), pats) }))
+                               .filter(r => r.n > 0);
+  return { rows, total: metrics(S.log, pats), pats };
+}
+
+let sortKey = 'err', sortDir = -1, AN = null;
+function sortVal(r, k) {
+  if (k === 's') return r.si;
+  if (k.startsWith('p_')) return r.p[k.slice(2)];
+  const v = r[k]; return v == null ? -Infinity : v;
+}
+function tableHtml() {
+  const pats = AN.pats, mod = S.mod;
+  const rows = AN.rows.slice().sort((x, y) => {
+    const d = (sortVal(x, sortKey) - sortVal(y, sortKey)) * sortDir;
+    return d || (y.score - x.score) || (x.si - y.si);
+  });
+  const maxErr = Math.max(1, ...AN.rows.map(r => r.err)), maxSc = Math.max(1, ...AN.rows.map(r => r.score || 0));
+  const cols = [['s', mod.noun, ''], ['n', 'Aufgaben', 'Erstversuche in dieser Gruppe'], ['err', 'Fehler', 'Falsche Antworten und abgelaufene Zeit'],
+                ['rate', 'Quote', 'Anteil Fehler'], ['med', 'Median', 'Mittlere Dauer pro Aufgabe (Median, alle Erstversuche)'],
+                ['medOk', 'Median richtig', 'Median nur der richtigen Antworten'],
+                ...pats.map(p => ['p_' + p.id, p.label, p.title]),
+                ['score', 'Übungsbedarf', 'Übungsbedarf = 10 · ((Fehler ÷ Aufgaben) + 2) · Median², der Median in Sekunden. Hoch bei vielen Fehlern und/oder langer Rechenzeit: Hier lohnt sich Üben.']];
+  const th = cols.map(([k, l, t]) => `<th scope="col" title="${esc(t)}" aria-sort="${k === sortKey ? (sortDir < 0 ? 'descending' : 'ascending') : 'none'}"><button type="button" data-k="${k}">${esc(l)}</button></th>`).join('');
+  const body = rows.map(r => `<tr${AN.top && AN.top.has(r.s) ? ' class="top"' : ''}>
+      <td class="${r.selected ? 'sel' : ''}">${esc(mod.seriesLabel(r.s))}</td><td>${r.n}</td>
+      <td>${r.err}<span class="mini" style="--w:${Math.round(r.err / maxErr * 100)}"></span></td>
+      <td>${fmtPct(r.rate)}</td><td>${fmtN(r.med / 1000)} s</td><td>${r.medOk == null ? '–' : fmtN(r.medOk / 1000) + ' s'}</td>
+      ${pats.map(p => `<td>${r.p[p.id] || '–'}</td>`).join('')}
+      <td>${fmtN(r.score, 0)}<span class="mini sc" style="--w:${Math.round((r.score || 0) / maxSc * 100)}"></span></td></tr>`).join('');
+  return `<div class="tablewrap"><table><thead><tr>${th}</tr></thead><tbody>${body}</tbody></table></div>`;
+}
+
+function timelineHtml() {
+  const lim = S.cfg.minutes, used = S.endedActive;
+  const bins = Array.from({ length: 180 }, () => []), perMin = Array(30).fill(0);
+  S.log.forEach(r => {
+    const b = Math.min(179, Math.floor(r.endMs / 10000));
+    perMin[Math.floor(b / 6)]++;
+    if (r.kind !== 'ok') bins[b].push(r);
+  });
+  let h = '<div class="tl-grid">';
+  for (let m = 0; m < 30; m++) {
+    const off = m >= lim; let cells = '', tot = 0;
+    for (let i = 0; i < 6; i++) {
+      const b = m * 6 + i, start = b * 10000, list = bins[b]; tot += list.length;
+      const dead = off || start >= used, t0 = mmss(start / 1000), t1 = mmss((start + 10000) / 1000);
+      let title = '';
+      if (!off) title = start >= used ? `${t0}–${t1}: nicht erreicht`
+        : `${t0}–${t1}: ${list.length} Fehler` + (list.length ? ' (' + list.map(r => `${r.label}${r.entered == null ? ', Zeit' : ' → ' + r.entered}`).join('; ') + ')' : '');
+      cells += `<span class="tc ${dead ? 'off' : 'c' + Math.min(3, list.length)}" title="${esc(title)}">${!dead && list.length ? list.length : ''}</span>`;
+    }
+    h += `<div class="tm${off ? ' off' : ''}"><div class="lab">Min. ${m + 1}</div><div class="cells">${cells}</div>` +
+         (off ? '' : `<div class="ft"><b>${tot}</b> Fehler<br>${perMin[m]} Aufg.</div>`) + '</div>';
+  }
+  return h + '</div>';
+}
+
+function repsHtml() {
+  const open = S.repQueue.length;
+  if (!S.reps.length && !open) return '';
+  const rows = S.reps.map(r => `<tr><td>${esc(r.task.label)} = ${r.task.answer}</td><td>${r.attempts}</td><td>${fmtN(r.durMs / 1000)} s</td></tr>`).join('');
+  const direct = S.reps.filter(r => r.attempts === 1).length;
+  return `<section class="res-sec"><h2>Wiederholungen</h2>
+    <p class="hint">${S.reps.length} wiederholt, davon ${direct} gleich beim ersten Versuch richtig${open ? '; ' + open + ' noch offen bei Testende' : ''}. Wiederholungen zählen nicht als neue Fehler und nicht in Median oder Aufgabenzahl.</p>
+    ${rows ? `<div class="tablewrap"><table style="max-width:560px"><thead><tr><th>Aufgabe</th><th>Versuche</th><th>Dauer</th></tr></thead><tbody>${rows}</tbody></table></div>` : ''}</section>`;
+}
+
+function renderResult() {
+  AN = analyse(); sortKey = 'err'; sortDir = -1;
+  const T = AN.total, train = S.cfg.mode === 'train', ok = T.n - T.err, mod = S.mod;
+  const timeErr = S.log.filter(r => r.kind === 'timeout').length;
+  // Die drei höchsten Übungsbedarf-Werte der Tabelle, ohne weitere Filter
+  const topRows = AN.rows.slice().sort((a, b) => b.score - a.score).slice(0, 3);
+  AN.top = new Set(topRows.map(r => r.s));
+  const thin = topRows.some(r => r.n < 3);
+  const date = S.finishedAt.toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' });
+  const sub = [S.cfg.name, mod.describe(S.cfg.settings), modeLabel(S.cfg.mode), S.cfg.minutes + ' min', date].filter(Boolean).map(esc).join(' · ');
+  const extra = mod.extraReport ? mod.extraReport({ log: S.log }) : null;
+
+  let sum = `<div><dt>Aufgaben</dt><dd>${T.n}</dd></div>
+    <div><dt>Richtig</dt><dd>${ok} <small>${fmtPct(T.n ? ok / T.n : null)}</small></dd></div>
+    <div><dt>Fehler</dt><dd>${T.err}${train && timeErr ? ` <small>davon ${timeErr}× Zeit</small>` : ''}</dd></div>
+    <div><dt>Median pro Aufgabe</dt><dd>${fmtN(T.med == null ? null : T.med / 1000)} <small>s</small></dd></div>`;
+  sum += train
+    ? `<div><dt>Zielscheiben getroffen</dt><dd>${S.hits}</dd></div>`
+    : `<div><dt>Wiederholungen</dt><dd>${S.reps.length}</dd></div>`;
+
+  $('s-result').innerHTML = `
+    <h1 class="res-head">Auswertung</h1>
+    <p class="res-sub">${sub}</p>
+    ${T.n ? `
+    <dl class="summary">${sum}</dl>
+    ${topRows.length ? `<div class="practice"><b>Hier lohnt sich Üben:</b> ${topRows.map(r => `<b>${esc(mod.seriesName(r.s))}</b> (Übungsbedarf ${fmtN(r.score, 0)}: ${r.err} Fehler bei ${r.n === 1 ? '1 Aufgabe' : r.n + ' Aufgaben'}, Median ${fmtN(r.med / 1000)} s)`).join('; ')}.
+      <span class="hint">Das sind die Gruppen mit dem höchsten Übungsbedarf, in der Tabelle gelb hinterlegt.${thin ? ' Bei Gruppen mit nur 1–2 Aufgaben ist der Wert unsicher.' : ''}</span></div>` : ''}
+    <section class="res-sec"><h2>Auswertung nach ${esc(mod.nounPlural)}</h2>
+      <div id="tbl">${tableHtml()}</div>
+      <p class="fine">Spalten anklicken zum Sortieren. Eine Aufgabe zählt in allen betroffenen Gruppen, zum Beispiel ${esc(mod.groupExample)}. ±1, ±10 und die weiteren Muster sind zusätzlich in „Fehler“ enthalten und werden für jede betroffene Gruppe gezählt. ● markiert gewählte Gruppen. Median und Übungsbedarf beziehen sich nur auf Erstversuche. Die Tabelle ist zuerst nach Fehlern sortiert, ein Klick auf „Übungsbedarf“ sortiert danach. Übungsbedarf = 10 · ((Fehler ÷ Aufgaben) + 2) · Median², der Median in Sekunden. Der Wert ist hoch bei vielen Fehlern und/oder langer Rechenzeit.</p>
+    </section>
+    ${extra ? `<section class="res-sec"><h2>${esc(extra.title)}</h2>${extra.html}<div class="legend">${extra.legend || ''}</div></section>` : ''}
+    <section class="res-sec"><h2>Zeitleiste</h2>
+      <p class="hint">Jedes kleine Kästchen sind 10 Sekunden, sechs Kästchen ergeben eine Minute. Die Zahl zeigt die Fehler in diesem Abschnitt. Gerechnet wird nur die Zeit, in der eine Aufgabe auf dem Bildschirm stand.</p>
+      ${timelineHtml()}
+    </section>
+    ${repsHtml()}` : '<p>Es wurde keine Aufgabe beantwortet.</p>'}
+    <div class="res-actions">
+      <button type="button" class="primary" id="r-again">Nochmal</button>
+      <button type="button" class="secondary" id="r-back">Einstellungen ändern</button>
+      ${T.n ? `<button type="button" class="secondary" id="r-csv1">CSV: Einzelaufgaben</button>
+      <button type="button" class="secondary" id="r-csv2">CSV: ${esc(mod.nounPlural)}</button>` : ''}
+    </div>`;
+
+  $('r-again').addEventListener('click', () => startTest(S.cfg));
+  $('r-back').addEventListener('click', () => { show('s-start'); document.body.dataset.mode = 'calm'; });
+  if (T.n) {
+    $('r-csv1').addEventListener('click', csvTasks);
+    $('r-csv2').addEventListener('click', csvSeries);
+    $('tbl').addEventListener('click', e => {
+      const b = e.target.closest('button[data-k]'); if (!b) return;
+      const k = b.dataset.k;
+      if (k === sortKey) sortDir = -sortDir; else { sortKey = k; sortDir = k === 's' ? 1 : -1; }
+      $('tbl').innerHTML = tableHtml();
+    });
+  }
+}
+
+/* ---------- CSV (Semikolon, UTF-8 mit BOM, Dezimalkomma: öffnet direkt in deutschem Excel) ---------- */
+const csvCell = v => { const s = v == null ? '' : String(v); return /[;"\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+const dec = (x, d = 2) => x == null ? '' : (Math.round(x * 10 ** d) / 10 ** d).toString().replace('.', ',');
+function download(name, rows) {
+  const text = '\ufeff' + rows.map(r => r.map(csvCell).join(';')).join('\r\n');
+  const url = URL.createObjectURL(new Blob([text], { type: 'text/csv;charset=utf-8' }));
+  const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1500);
+}
+function fileStem() {
+  const d = S.finishedAt, p = n => String(n).padStart(2, '0');
+  const who = (S.cfg.name || '').replace(/[^\wÄÖÜäöüß-]+/g, '_').replace(/^_+|_+$/g, '');
+  return S.mod.fileName + (who ? '_' + who : '') + '_' + d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + '_' + p(d.getHours()) + p(d.getMinutes());
+}
+function csvTasks() {
+  const cols = S.mod.csvColumns || [], date = S.finishedAt.toLocaleDateString('de-DE'), mode = modeLabel(S.cfg.mode);
+  const kindTxt = { ok: 'richtig', wrong: 'falsch', timeout: 'Zeit abgelaufen' };
+  const head = ['Name','Datum','Modus','Nr','Aufgabe', ...cols.map(c => c.head), 'Ergebnis','Eingabe','Bewertung','Dauer_s','Zeitpunkt_s','Gruppen','Wiederholung','Versuche'];
+  const rows = S.log.map(r => [S.cfg.name, date, mode, r.n, r.label, ...cols.map(c => c.get(r)), r.answer, r.entered, kindTxt[r.kind], dec(r.durMs / 1000), dec(r.endMs / 1000, 1), r.series.join('+'), 'nein', 1]);
+  S.reps.slice().sort((x, y) => x.endMs - y.endMs).forEach(r => {
+    const rec = { data: r.task.data };
+    rows.push([S.cfg.name, date, mode, '', r.task.label, ...cols.map(c => c.get(rec)), r.task.answer, r.task.answer, 'richtig', dec(r.durMs / 1000), dec(r.endMs / 1000, 1), r.task.series.join('+'), 'ja', r.attempts]);
+  });
+  download(fileStem() + '_einzelaufgaben.csv', [head, ...rows]);
+}
+function csvSeries() {
+  const pats = AN.pats;
+  const head = ['Name','Datum','Modus', S.mod.noun,'Aufgaben','Fehler','Fehlerquote_Prozent','Median_s','Median_richtig_s', ...pats.map(p => p.label), 'Übungsbedarf'];
+  const date = S.finishedAt.toLocaleDateString('de-DE'), mode = modeLabel(S.cfg.mode);
+  const mk = (label, r) => [S.cfg.name, date, mode, label, r.n, r.err, dec(r.rate == null ? null : r.rate * 100, 1),
+    dec(r.med == null ? null : r.med / 1000), dec(r.medOk == null ? null : r.medOk / 1000), ...pats.map(p => r.p[p.id]), dec(r.score, 1)];
+  download(fileStem() + '_gruppen.csv', [head, ...AN.rows.map(r => mk(r.s, r)), mk('gesamt', AN.total)]);
+}
+
+/* ---------- Start ---------- */
+loadSettings();
+})();
+</script>
+</body>
+</html>
