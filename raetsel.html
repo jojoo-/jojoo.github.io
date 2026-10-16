@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Rätsel</title>
+<style>
+:root{--bg:#eef2f7;--card:#fff;--ink:#1b2a41;--mute:#5d6b82;--line:#1b2a41;--ok:#2e7d4f;--okbg:#e3f4ea;--bad:#d32f2f;--acc:#2f5bea}
+@media (prefers-color-scheme:dark){:root{--bg:#121a28;--card:#1c2638;--ink:#e8edf6;--mute:#9aa8c0;--line:#9aa8c0;--ok:#5fcf8b;--okbg:#17352a;--bad:#ff6b6b;--acc:#7a9bff}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.5 Verdana,Tahoma,system-ui,sans-serif}
+main{max-width:720px;margin:0 auto;padding:20px 14px 60px}
+h1{font-size:1.6rem;margin:.2em 0 .6em}
+.card{background:var(--card);border-radius:10px;padding:16px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,.12)}
+label.l{display:block;font-weight:bold;margin:.8em 0 .3em}
+input[type=text],textarea{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:2px solid var(--mute);border-radius:6px;padding:8px}
+input:focus,textarea:focus,button:focus-visible{outline:3px solid var(--acc);outline-offset:1px}
+button{font:inherit;font-weight:bold;cursor:pointer;border:0;border-radius:6px;padding:10px 16px;background:var(--acc);color:#fff}
+button.sec{background:transparent;color:var(--acc);border:2px solid var(--acc)}
+button.x{background:transparent;color:var(--bad);padding:6px 10px}
+.erow{display:grid;grid-template-columns:auto 1fr 9em auto;gap:6px;align-items:center;margin-bottom:8px}
+.erow .n{color:var(--mute)}
+@media (max-width:560px){.erow{grid-template-columns:auto 1fr auto}.erow input:nth-of-type(2){grid-column:2/3}}
+.bar{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.qs{display:flex;flex-wrap:wrap;gap:24px 20px;align-items:flex-start}
+.q{width:9.5rem}
+.q .t{margin-bottom:8px;font-size:.9rem;line-height:1.35}
+.q .t b{color:var(--acc)}
+.boxes{display:flex;flex-direction:column;align-items:flex-start}
+.boxes .gap{height:1.2rem}
+.box{width:2.8rem;height:2.8rem;margin:0 0 -2px 0;border:2px solid var(--line);border-radius:0;background:var(--card);color:var(--ink);text-align:center;font:bold 1.4rem Verdana,sans-serif;text-transform:uppercase;padding:0;caret-color:var(--acc)}
+.box:focus{outline:none;background:var(--bg);border-color:var(--acc);position:relative;z-index:1;box-shadow:0 0 0 2px var(--acc)}
+.box.rev{color:var(--bad);border-color:var(--bad)}
+.q.done .box:not(.rev){background:var(--okbg);border-color:var(--ok);color:var(--ok)}
+.q.shake .boxes{animation:sh .35s}
+@keyframes sh{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+@media (prefers-reduced-motion:reduce){.q.shake .boxes{animation:none}}
+.status{color:var(--mute);margin-left:4px}
+#res{display:none;border:3px solid var(--ok);background:var(--okbg);border-radius:10px;padding:16px;margin-top:20px;white-space:pre-wrap;font-size:1.15rem}
+#link{font-size:.9rem}
+.foot{margin-top:30px;font-size:.85rem;color:var(--mute)}
+.foot a{color:var(--acc)}
+</style>
+</head>
+<body>
+<main id="app"></main>
+<script>
+const app = document.getElementById('app');
+const params = new URLSearchParams(location.search);
+const base = location.href.split('#')[0].split('?')[0];
+
+function h(tag, attrs = {}, ...kids) {
+  const e = document.createElement(tag);
+  for (const k in attrs) {
+    if (k === 'class') e.className = attrs[k];
+    else if (k.startsWith('on')) e.addEventListener(k.slice(2), attrs[k]);
+    else e.setAttribute(k, attrs[k]);
+  }
+  kids.flat().forEach(x => e.append(x));
+  return e;
+}
+
+/* ---------- Kodierung: JSON -> UTF-8 -> deflate (gzip-Algorithmus) -> base64url ----------
+   Komprimierte Links beginnen mit "~". Ältere, unkomprimierte Links funktionieren weiter. */
+const toB64 = bytes => {
+  let s = '';
+  bytes.forEach(b => s += String.fromCharCode(b));
+  return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+};
+const fromB64 = str => {
+  str = str.replace(/-/g, '+').replace(/_/g, '/');
+  while (str.length % 4) str += '=';
+  return Uint8Array.from(atob(str), c => c.charCodeAt(0));
+};
+async function pipe(bytes, stream) {
+  const w = stream.writable.getWriter();
+  w.write(bytes); w.close();
+  return new Uint8Array(await new Response(stream.readable).arrayBuffer());
+}
+async function enc(obj) {
+  const bytes = new TextEncoder().encode(JSON.stringify(obj));
+  const plain = toB64(bytes);
+  if (typeof CompressionStream === 'undefined') return plain;
+  try {
+    const z = '~' + toB64(await pipe(bytes, new CompressionStream('deflate-raw')));
+    return z.length < plain.length ? z : plain;
+  } catch (e) { return plain; }
+}
+async function dec(str) {
+  let bytes;
+  if (str.startsWith('~')) {
+    if (typeof DecompressionStream === 'undefined') throw new Error('Browser zu alt');
+    bytes = await pipe(fromB64(str.slice(1)), new DecompressionStream('deflate-raw'));
+  } else bytes = fromB64(str);
+  return JSON.parse(new TextDecoder().decode(bytes));
+}
+const norm = c => (c.toLowerCase() === 'ß' ? 'ß' : c.toUpperCase());
+
+/* ---------- Editor ---------- */
+function editor(d) {
+  const rows = d && d.q && d.q.length ? d.q.map(x => [...x]) : [['', ''], ['', ''], ['', '']];
+  const title = h('input', { type: 'text', placeholder: 'z. B. Wörter rund um den Wald' });
+  title.value = (d && d.t) || '';
+  const res = h('textarea', { rows: 4, placeholder: 'Dieser Text erscheint, wenn alle Antworten stimmen' });
+  res.value = (d && d.r) || '';
+  const list = h('div');
+  const out = h('div', { class: 'card', style: 'display:none' });
+
+  function draw() {
+    list.replaceChildren(...rows.map((r, i) => {
+      const q = h('input', { type: 'text', placeholder: 'Frage', 'aria-label': 'Frage ' + (i + 1) });
+      const a = h('input', { type: 'text', placeholder: 'Lösung', 'aria-label': 'Lösung ' + (i + 1) });
+      q.value = r[0]; a.value = r[1];
+      q.addEventListener('input', () => r[0] = q.value);
+      a.addEventListener('input', () => r[1] = a.value);
+      return h('div', { class: 'erow' },
+        h('span', { class: 'n' }, (i + 1) + '.'), q, a,
+        h('button', { class: 'x', title: 'Zeile entfernen', onclick: () => { rows.splice(i, 1); draw(); } }, '✕'));
+    }));
+  }
+
+  async function generate() {
+    const q = rows.map(r => [r[0].trim(), r[1].trim()]).filter(r => r[0] && r[1]);
+    if (!q.length) { alert('Bitte mindestens eine Frage mit Lösung eintragen.'); return; }
+    const url = base + '?d=' + await enc({ t: title.value.trim(), q, r: res.value.trim() });
+    const field = h('input', { type: 'text', id: 'link', readonly: '' });
+    field.value = url;
+    const copy = h('button', { onclick: async () => {
+      try { await navigator.clipboard.writeText(url); } catch (e) { field.select(); document.execCommand('copy'); }
+      copy.textContent = 'Kopiert ✓'; setTimeout(() => copy.textContent = 'Link kopieren', 1500);
+    } }, 'Link kopieren');
+    const test = h('a', { href: url, target: '_blank', rel: 'noopener' }, h('button', { class: 'sec', type: 'button' }, 'Übung testen'));
+    out.replaceChildren(h('b', {}, 'Dein Link (' + url.length + ' Zeichen)'), h('div', { style: 'margin-top:8px' }, field), h('div', { class: 'bar' }, copy, test));
+    out.style.display = 'block';
+    field.select();
+  }
+
+  app.replaceChildren(
+    h('h1', {}, 'Rätsel erstellen'),
+    h('div', { class: 'card' },
+      h('label', { class: 'l' }, 'Titel (optional)'), title,
+      h('label', { class: 'l' }, 'Fragen und Lösungen'), list,
+      h('div', { class: 'bar' }, h('button', { class: 'sec', onclick: () => { rows.push(['', '']); draw(); } }, '+ Frage hinzufügen')),
+      h('label', { class: 'l' }, 'Text am Ende'), res,
+      h('div', { class: 'bar' }, h('button', { onclick: generate }, 'Link erzeugen'))),
+    out);
+  draw();
+}
+
+/* ---------- Übung ---------- */
+function play(d) {
+  document.title = d.t || 'Rätsel';
+  const rows = [];
+  const status = h('span', { class: 'status' });
+  const res = h('div', { id: 'res', role: 'status' });
+  res.textContent = d.r || 'Geschafft! 🎉';
+
+  const qs = d.q.map((pair, qi) => {
+    const sol = [...pair[1].trim()];
+    const boxes = [], solChars = [];
+    const wrap = h('div', { class: 'boxes' });
+    sol.forEach(ch => {
+      if (/\s/.test(ch)) { wrap.append(h('span', { class: 'gap' })); return; }
+      const inp = h('input', { class: 'box', type: 'text', maxlength: '2', autocomplete: 'off', autocapitalize: 'characters', spellcheck: 'false', 'aria-label': 'Buchstabe ' + (boxes.length + 1) });
+      const idx = boxes.length;
+      inp.addEventListener('input', () => {
+        const v = [...inp.value].slice(-1)[0] || '';
+        inp.value = v ? norm(v) : '';
+        if (v && boxes[idx + 1]) boxes[idx + 1].focus();
+      });
+      inp.addEventListener('keydown', e => {
+        if (e.key === 'Backspace' && !inp.value && boxes[idx - 1] && !boxes[idx - 1].readOnly) { boxes[idx - 1].focus(); boxes[idx - 1].value = ''; e.preventDefault(); }
+        else if ((e.key === 'ArrowUp' || e.key === 'ArrowLeft') && boxes[idx - 1]) { boxes[idx - 1].focus(); e.preventDefault(); }
+        else if ((e.key === 'ArrowDown' || e.key === 'ArrowRight') && boxes[idx + 1]) { boxes[idx + 1].focus(); e.preventDefault(); }
+        else if (e.key === 'Enter') check();
+      });
+      inp.addEventListener('focus', () => inp.select());
+      boxes.push(inp); solChars.push(norm(ch)); wrap.append(inp);
+    });
+    const el = h('div', { class: 'q' }, h('div', { class: 't' }, h('b', {}, (qi + 1) + '. '), pair[0]), wrap);
+    rows.push({ el, boxes, sol: solChars, done: false });
+    return el;
+  });
+
+  function check() {
+    rows.forEach(r => {
+      if (r.done) return;
+      if (r.boxes.every(b => !b.value)) return;           // nicht bearbeitete Zeile: keine Strafe
+      const ok = () => r.boxes.every((b, i) => norm(b.value) === r.sol[i]);
+      if (!ok()) {
+        const cand = r.boxes.map((b, i) => i).filter(i => !r.boxes[i].classList.contains('rev') && norm(r.boxes[i].value) !== r.sol[i]);
+        const i = cand[Math.floor(Math.random() * cand.length)];
+        const b = r.boxes[i];
+        b.value = r.sol[i]; b.classList.add('rev'); b.readOnly = true;
+        r.boxes.forEach((x, j) => { if (!x.classList.contains('rev') && x.value && norm(x.value) !== r.sol[j]) x.value = ''; });  // falsche Buchstaben löschen
+        r.el.classList.remove('shake'); void r.el.offsetWidth; r.el.classList.add('shake');
+      }
+      if (ok()) { r.done = true; r.el.classList.add('done'); r.boxes.forEach(b => b.readOnly = true); }
+    });
+    const n = rows.filter(r => r.done).length;
+    status.textContent = n + ' von ' + rows.length + ' gelöst';
+    if (n === rows.length) { res.style.display = 'block'; res.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+  }
+
+  const edit = h('a', { href: base + '?edit=1&d=' + params.get('d') }, 'Rätsel bearbeiten');
+  app.replaceChildren(
+    h('h1', {}, d.t || 'Rätsel'),
+    h('div', { class: 'card' }, h('div', { class: 'qs' }, qs)),
+    h('div', { class: 'bar' }, h('button', { onclick: check }, 'Prüfen'), status),
+    res,
+    h('div', { class: 'foot' }, edit));
+  const first = rows[0] && rows[0].boxes[0]; if (first) first.focus();
+}
+
+/* ---------- Start ---------- */
+(async function () {
+  const raw = params.get('d');
+  let data = null;
+  if (raw) {
+    try {
+      data = await dec(raw);
+      if (!data || !Array.isArray(data.q) || !data.q.length) throw 0;
+    } catch (e) { data = null; alert('Der Link ist ungültig oder beschädigt. Du kannst unten ein neues Rätsel erstellen.'); }
+  }
+  if (data && !params.get('edit')) play(data); else editor(data);
+})();
+</script>
+</body>
+</html>
