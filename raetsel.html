@@ -38,8 +38,9 @@ button.x{background:transparent;color:var(--bad);padding:6px 10px}
 .status{color:var(--mute);margin-left:4px}
 #res{display:none;border:3px solid var(--ok);background:var(--okbg);border-radius:10px;padding:16px;margin-top:20px;white-space:pre-wrap;font-size:1.15rem}
 #link{font-size:.9rem}
-.foot{margin-top:30px;font-size:.85rem;color:var(--mute)}
-.foot a{color:var(--acc)}
+.foot{margin-top:30px;text-align:right}
+.foot a{display:inline-block;padding:6px 10px;color:var(--mute);text-decoration:none;font-size:1rem;line-height:1;opacity:.3}
+.foot a:hover,.foot a:focus-visible{opacity:1}
 </style>
 </head>
 <body>
@@ -202,7 +203,7 @@ function play(d) {
     if (n === rows.length) { res.style.display = 'block'; res.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
   }
 
-  const edit = h('a', { href: base + '?edit=1&d=' + params.get('d') }, 'Rätsel bearbeiten');
+  const edit = h('a', { href: base + '?edit=1&d=' + params.get('d'), title: 'Rätsel bearbeiten', 'aria-label': 'Rätsel bearbeiten' }, '•');
   app.replaceChildren(
     h('h1', {}, d.t || 'Rätsel'),
     h('div', { class: 'card' }, h('div', { class: 'qs' }, qs)),
